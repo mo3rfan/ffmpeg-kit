@@ -1,4 +1,4 @@
-class ReturnCode {
+export class ReturnCode {
 
   static SUCCESS = 0;
 
@@ -34,8 +34,8 @@ class ReturnCode {
     return (this.#value === ReturnCode.CANCEL);
   }
 
-}
+  toString() {
+    return this.#value;
+  }
 
-export {
-  ReturnCode
 }

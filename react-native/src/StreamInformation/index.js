@@ -1,4 +1,4 @@
-class StreamInformation {
+export class StreamInformation {
 
   static KEY_INDEX = "index";
   static KEY_TYPE = "codec_type";
@@ -237,8 +237,4 @@ class StreamInformation {
   getAllProperties() {
     return this.#allProperties;
   }
-}
-
-export {
-  StreamInformation
 }

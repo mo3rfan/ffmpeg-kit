@@ -1,4 +1,4 @@
-class Session {
+export class Session {
 
   getExecuteCallback() {
   }
@@ -66,8 +66,4 @@ class Session {
   cancel() {
   }
 
-}
-
-export {
-  Session
 }

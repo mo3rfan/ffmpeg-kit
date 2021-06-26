@@ -2,14 +2,10 @@ import {NativeModules} from 'react-native';
 
 const {FFmpegKitReactNativeModule} = NativeModules;
 
-class ArchDetect {
+export class ArchDetect {
 
   static async getArch() {
     return FFmpegKitReactNativeModule.getArch();
   }
 
-}
-
-export {
-  ArchDetect
 }

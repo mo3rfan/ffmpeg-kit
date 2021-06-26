@@ -1,43 +1,42 @@
 import {AbstractSession} from "../AbstractSession";
+import {NativeModules} from "react-native";
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
 
-class FFmpegSession extends AbstractSession {
+const {FFmpegKitReactNativeModule} = NativeModules;
 
-  constructor(sessionId, createTime, startTime, command, argumentsArray, logRedirectionStrategy) {
-    super(sessionId, createTime, startTime, command, argumentsArray, logRedirectionStrategy);
+export class FFmpegSession extends AbstractSession {
+
+  constructor() {
+    super();
+  }
+
+  static async create(argumentsArray, executeCallback, logCallback, statisticsCallback, logRedirectionStrategy) {
+    const session = await AbstractSession.createFFmpegSession(argumentsArray, logRedirectionStrategy);
+    const sessionId = session.getSessionId();
+
+    FFmpegKitFactory.setExecuteCallback(sessionId, executeCallback);
+    FFmpegKitFactory.setLogCallback(sessionId, logCallback);
+    FFmpegKitFactory.setStatisticsCallback(sessionId, statisticsCallback);
+
+    return session;
+  }
+
+  static fromMap(sessionMap) {
+    return AbstractSession.createFFmpegSessionFromMap(sessionMap);
   }
 
   getStatisticsCallback() {
-    //@TODO implement this later
+    return FFmpegKitFactory.getStatisticsCallback(this.getSessionId());
   }
 
-  /**
-   * Returns all statistics entries generated for this session. If there are asynchronous
-   * messages that are not delivered yet, this method waits for them until the given timeout.
-   *
-   * @param waitTimeout wait timeout for asynchronous messages in milliseconds
-   * @return list of statistics entries generated for this session
-   */
   getAllStatistics(waitTimeout) {
-    //@TODO implement this later
+    return FFmpegKitReactNativeModule.ffmpegSessionGetAllStatistics(this.getSessionId(), FFmpegKitFactory.optionalNumericParameter(waitTimeout)).map(FFmpegKitFactory.mapToStatistics);
   }
 
-  /**
-   * Returns all statistics entries delivered for this session. Note that if there are
-   * asynchronous messages that are not delivered yet, this method will not wait for
-   * them and will return immediately.
-   *
-   * @return list of statistics entries received for this session
-   */
   getStatistics() {
-    //@TODO implement this later
+    return FFmpegKitReactNativeModule.ffmpegSessionGetStatistics(this.getSessionId()).map(FFmpegKitFactory.mapToStatistics);
   }
 
-  /**
-   * Returns the last received statistics entry.
-   *
-   * @return the last received statistics entry or null if there are not any statistics entries
-   * received
-   */
   getLastReceivedStatistics() {
     let statistics = this.getStatistics();
 
@@ -56,8 +55,4 @@ class FFmpegSession extends AbstractSession {
     return false;
   }
 
-}
-
-export {
-  FFmpegSession
 }

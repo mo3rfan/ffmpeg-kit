@@ -1,15 +1,90 @@
-import {FFmpegSession} from "./FFmpegSession";
-import {ExecuteCallback} from "./ExecuteCallback";
-import {LogCallback} from "./LogCallback";
-import {StatisticsCallback} from "./StatisticsCallback";
-import {FFprobeSession} from "./FFprobeSession";
-import {Signal} from "./Signal";
-import {MediaInformationSession} from "./MediaInformationSession";
-import {Level} from "./Level";
-import {Session} from "./Session";
-import {LogRedirectionStrategy} from "./LogRedirectionStrategy";
-
 declare module 'ffmpeg-kit-react-native' {
+
+  export abstract class AbstractSession implements Session {
+
+    protected constructor();
+
+    static createFFmpegSession(argumentsArray: Array<string>, logRedirectionStrategy?: LogRedirectionStrategy): Promise<FFmpegSession>;
+
+    static createFFmpegSessionFromMap(sessionMap: { [key: string]: any }): FFmpegSession;
+
+    static createFFprobeSession(argumentsArray: Array<string>, logRedirectionStrategy?: LogRedirectionStrategy): Promise<FFprobeSession>;
+
+    static createFFprobeSessionFromMap(sessionMap: { [key: string]: any }): FFprobeSession;
+
+    static createMediaInformationSession(argumentsArray: Array<string>): Promise<MediaInformationSession>;
+
+    static createMediaInformationSessionFromMap(sessionMap: { [key: string]: any }): MediaInformationSession;
+
+    getExecuteCallback(): ExecuteCallback;
+
+    getLogCallback(): LogCallback;
+
+    getSessionId(): number;
+
+    getCreateTime(): Date;
+
+    getStartTime(): Date;
+
+    getEndTime(): Promise<Date>;
+
+    getDuration(): Promise<number>;
+
+    getArguments(): Array<string>;
+
+    getCommand(): string;
+
+    getAllLogs(waitTimeout ?: number): Promise<Array<Log>>;
+
+    getLogs(): Promise<Array<Log>>;
+
+    getAllLogsAsString(waitTimeout?: number): Promise<string>;
+
+    getLogsAsString(): Promise<string>;
+
+    getOutput(): Promise<string>;
+
+    getState(): Promise<SessionState>;
+
+    getReturnCode(): Promise<ReturnCode>;
+
+    getFailStackTrace(): Promise<string>;
+
+    getLogRedirectionStrategy(): LogRedirectionStrategy;
+
+    thereAreAsynchronousMessagesInTransmit(): Promise<boolean>;
+
+    isFFmpeg(): boolean;
+
+    isFFprobe(): boolean;
+
+    cancel(): void;
+
+  }
+
+  export class ArchDetect {
+
+    static getArch(): Promise<string>;
+
+  }
+
+  export type ExecuteCallback = (session: Session) => void;
+
+  export class FFmpegKit {
+
+    static executeAsync(command: string, executeCallback?: ExecuteCallback, logCallback?: LogCallback, statisticsCallback?: StatisticsCallback): Promise<FFmpegSession>;
+
+    static executeWithArgumentsAsync(commandArguments: string[], executeCallback?: ExecuteCallback, logCallback?: LogCallback, statisticsCallback?: StatisticsCallback): Promise<FFmpegSession>;
+
+    static cancel(sessionId?: number): Promise<void>;
+
+    static listSessions(): Promise<FFmpegSession[]>;
+
+    static parseArguments(command: string): string[];
+
+    static argumentsToString(commandArguments: string[]): string;
+
+  }
 
   export class FFmpegKitConfig {
 
@@ -39,13 +114,19 @@ declare module 'ffmpeg-kit-react-native' {
 
     static ignoreSignal(signal: Signal): Promise<void>;
 
+    static asyncFFmpegExecute(session: FFmpegSession): Promise<void>;
+
+    static asyncFFprobeExecute(session: FFprobeSession): Promise<void>;
+
+    static asyncGetMediaInformationExecute(session: MediaInformationSession, waitTimeout?: number): Promise<void>;
+
     static enableLogCallback(logCallback: LogCallback): void;
 
     static enableStatisticsCallback(statisticsCallback: StatisticsCallback): void;
 
     static enableExecuteCallback(executeCallback: ExecuteCallback): void;
 
-    static getLogLevel(): Promise<Level>;
+    static getLogLevel(): Level;
 
     static setLogLevel(level: Level): Promise<void>;
 
@@ -63,11 +144,13 @@ declare module 'ffmpeg-kit-react-native' {
 
     static getSessionsByState(state): Promise<Session[]>;
 
-    static getLogRedirectionStrategy(): Promise<LogRedirectionStrategy>;
+    static getLogRedirectionStrategy(): LogRedirectionStrategy;
 
-    static setLogRedirectionStrategy(logRedirectionStrategy: LogRedirectionStrategy): Promise<void>;
+    static setLogRedirectionStrategy(logRedirectionStrategy: LogRedirectionStrategy);
 
     static messagesInTransmit(sessionId: number): Promise<number>;
+
+    static sessionStateToString(state): string;
 
     static enableLogs(): Promise<void>;
 
@@ -81,21 +164,35 @@ declare module 'ffmpeg-kit-react-native' {
 
     static writeToPipe(inputPath: string, pipePath: string): Promise<number>;
 
+    static selectDocumentForRead(type?: string, extraTypes?: string[]): Promise<string>;
+
+    static selectDocumentForWrite(title?: string, type?: string, extraTypes?: string[]): Promise<string>;
+
+    static getSafParameterForRead(uriString): Promise<string>;
+
+    static getSafParameterForWrite(uriString): Promise<string>;
+
   }
 
-  export class FFmpegKit {
+  export class FFmpegSession extends AbstractSession implements Session {
 
-    static executeAsync(command: string, executeCallback?: ExecuteCallback, logCallback?: LogCallback, statisticsCallback?: StatisticsCallback): Promise<FFmpegSession>;
+    constructor();
 
-    static executeAsyncWithArguments(commandArguments: string[], executeCallback?: ExecuteCallback, logCallback?: LogCallback, statisticsCallback?: StatisticsCallback): Promise<FFmpegSession>;
+    static create(argumentsArray: Array<string>, logRedirectionStrategy?: LogRedirectionStrategy): Promise<FFmpegSession>;
 
-    static cancel(sessionId?: number): Promise<void>;
+    static fromMap(sessionMap: { [key: string]: any }): FFmpegSession;
 
-    static listSessions(): Promise<FFmpegSession[]>;
+    getStatisticsCallback(): StatisticsCallback;
 
-    static parseArguments(command: string): string[];
+    getAllStatistics(waitTimeout?: number): Promise<Array<Statistics>>;
 
-    static argumentsToString(commandArguments: string[]): string;
+    getStatistics(): Promise<Array<Statistics>>;
+
+    getLastReceivedStatistics(): Promise<Statistics>;
+
+    isFFmpeg(): boolean;
+
+    isFFprobe(): boolean;
 
   }
 
@@ -103,7 +200,7 @@ declare module 'ffmpeg-kit-react-native' {
 
     static executeAsync(command: string, executeCallback?: ExecuteCallback, logCallback?: LogCallback): Promise<FFprobeSession>;
 
-    static executeAsyncWithArguments(commandArguments: string[], executeCallback?: ExecuteCallback, logCallback?: LogCallback): Promise<FFprobeSession>;
+    static executeWithArgumentsAsync(commandArguments: string[], executeCallback?: ExecuteCallback, logCallback?: LogCallback): Promise<FFprobeSession>;
 
     static getMediaInformationAsync(path: string, executeCallback?: ExecuteCallback, logCallback?: LogCallback, waitTimeout?: number): Promise<MediaInformationSession>;
 
@@ -112,6 +209,317 @@ declare module 'ffmpeg-kit-react-native' {
     static getMediaInformationFromCommandArgumentsAsync(commandArguments: string[], executeCallback?: ExecuteCallback, logCallback?: LogCallback, waitTimeout?: number): Promise<MediaInformationSession>;
 
     static listSessions(): Promise<FFprobeSession[]>;
+
+  }
+
+  export class FFprobeSession extends AbstractSession implements Session {
+
+    constructor();
+
+    static create(argumentsArray: Array<string>, logRedirectionStrategy?: LogRedirectionStrategy): Promise<FFprobeSession>;
+
+    static fromMap(sessionMap: { [key: string]: any }): FFprobeSession;
+
+    isFFmpeg(): boolean;
+
+    isFFprobe(): boolean;
+
+  }
+
+  export class Level {
+    static readonly AV_LOG_STDERR: number;
+    static readonly AV_LOG_QUIET: number;
+    static readonly AV_LOG_PANIC: number;
+    static readonly AV_LOG_FATAL: number;
+    static readonly AV_LOG_ERROR: number;
+    static readonly AV_LOG_WARNING: number;
+    static readonly AV_LOG_INFO: number;
+    static readonly AV_LOG_VERBOSE: number;
+    static readonly AV_LOG_DEBUG: number;
+    static readonly AV_LOG_TRACE: number;
+
+    static logLevelToString(number: number): string;
+  }
+
+  export class Log {
+
+    constructor(sessionId: number, level: number, message: String);
+
+    getSessionId(): number;
+
+    getLevel(): number;
+
+    getMessage(): String;
+
+  }
+
+  export type LogCallback = (log: Log) => void;
+
+  export enum LogRedirectionStrategy {
+    ALWAYS_PRINT_LOGS = 0,
+    PRINT_LOGS_WHEN_NO_CALLBACKS_DEFINED = 1,
+    PRINT_LOGS_WHEN_GLOBAL_CALLBACK_NOT_DEFINED = 2,
+    PRINT_LOGS_WHEN_SESSION_CALLBACK_NOT_DEFINED = 3,
+    NEVER_PRINT_LOGS = 4
+  }
+
+  export class MediaInformation {
+
+    static readonly KEY_MEDIA_PROPERTIES: string;
+    static readonly KEY_FILENAME: string;
+    static readonly KEY_FORMAT: string;
+    static readonly KEY_FORMAT_LONG: string;
+    static readonly KEY_START_TIME: string;
+    static readonly KEY_DURATION: string;
+    static readonly KEY_SIZE: string;
+    static readonly KEY_BIT_RATE: string;
+    static readonly KEY_TAGS: string;
+
+    constructor(properties: Record<string, any>);
+
+    getFilename(): string;
+
+    getFormat(): string;
+
+    getLongFormat(): string;
+
+    getDuration(): string;
+
+    getStartTime(): string;
+
+    getSize(): string;
+
+    getBitrate(): string;
+
+    getTags(): Record<string, any>;
+
+    getStreams(): Array<StreamInformation>;
+
+    getStringProperty(key: string): string;
+
+    getNumberProperty(key: string): number;
+
+    getProperties(key: string): Record<string, any>;
+
+    getMediaProperties(): Record<string, any>;
+
+    getAllProperties(): Record<string, any>;
+
+  }
+
+  export class MediaInformationJsonParser {
+
+    static from(ffprobeJsonOutput: string): Promise<MediaInformation>;
+
+    static fromWithError(ffprobeJsonOutput: string): Promise<MediaInformation>;
+
+  }
+
+  export class MediaInformationSession extends FFprobeSession {
+
+    constructor();
+
+    static create(argumentsArray: Array<string>): Promise<MediaInformationSession>;
+
+    static fromMap(sessionMap: { [key: string]: any }): MediaInformationSession;
+
+    getMediaInformation(): MediaInformation;
+
+    setMediaInformation(mediaInformation: MediaInformation): void;
+
+  }
+
+  export class ReturnCode {
+
+    static readonly SUCCESS: number;
+
+    static readonly CANCEL: number;
+
+    constructor(value: number);
+
+    static isSuccess(returnCode: ReturnCode): boolean;
+
+    static isCancel(returnCode: ReturnCode): boolean;
+
+    getValue(): number;
+
+    isSuccess(): boolean;
+
+    isError(): boolean;
+
+    isCancel(): boolean;
+
+  }
+
+  export interface Session {
+
+    getExecuteCallback(): ExecuteCallback;
+
+    getLogCallback(): LogCallback;
+
+    getSessionId(): number;
+
+    getCreateTime(): Date;
+
+    getStartTime(): Date;
+
+    getEndTime(): Promise<Date>;
+
+    getDuration(): Promise<number>;
+
+    getArguments(): Array<String>;
+
+    getCommand(): String;
+
+    getAllLogs(waitTimeout ?: number): Promise<Array<Log>>;
+
+    getLogs(): Promise<Array<Log>>;
+
+    getAllLogsAsString(waitTimeout?: number): Promise<string>;
+
+    getLogsAsString(): Promise<string>;
+
+    getOutput(): Promise<string>;
+
+    getState(): Promise<SessionState>;
+
+    getReturnCode(): Promise<ReturnCode>;
+
+    getFailStackTrace(): Promise<string>;
+
+    getLogRedirectionStrategy(): LogRedirectionStrategy;
+
+    thereAreAsynchronousMessagesInTransmit(): Promise<boolean>;
+
+    isFFmpeg(): boolean;
+
+    isFFprobe(): boolean;
+
+    cancel(): void;
+
+  }
+
+  export enum SessionState {
+    CREATED = 0,
+    RUNNING = 1,
+    FAILED = 2,
+    COMPLETED = 3
+  }
+
+  export enum Signal {
+    SIGINT = 2,
+    SIGQUIT = 3,
+    SIGPIPE = 13,
+    SIGTERM = 15,
+    SIGXCPU = 24
+  }
+
+  export class Statistics {
+
+    constructor(sessionId: number, videoFrameNumber: number, videoFps: number, videoQuality: number, size: number, time: number, bitrate: number, speed: number);
+
+    getSessionId(): number;
+
+    setSessionId(sessionId: number): void;
+
+    getVideoFrameNumber(): number;
+
+    setVideoFrameNumber(videoFrameNumber: number): void;
+
+    getVideoFps(): number;
+
+    setVideoFps(videoFps: number): void;
+
+    getVideoQuality(): number;
+
+    setVideoQuality(videoQuality: number): void;
+
+    getSize(): number;
+
+    setSize(size: number): void;
+
+    getTime(): number;
+
+    setTime(time: number): void;
+
+    getBitrate(): number;
+
+    setBitrate(bitrate: number): void;
+
+    getSpeed(): number;
+
+    setSpeed(speed: number): void;
+
+  }
+
+  export type StatisticsCallback = (statistics: Statistics) => void;
+
+  export class StreamInformation {
+
+    static readonly KEY_INDEX: string;
+    static readonly KEY_TYPE: string;
+    static readonly KEY_CODEC: string;
+    static readonly KEY_CODEC_LONG: string;
+    static readonly KEY_FORMAT: string;
+    static readonly KEY_WIDTH: string;
+    static readonly KEY_HEIGHT: string;
+    static readonly KEY_BIT_RATE: string;
+    static readonly KEY_SAMPLE_RATE: string;
+    static readonly KEY_SAMPLE_FORMAT: string;
+    static readonly KEY_CHANNEL_LAYOUT: string;
+    static readonly KEY_SAMPLE_ASPECT_RATIO: string;
+    static readonly KEY_DISPLAY_ASPECT_RATIO: string;
+    static readonly KEY_AVERAGE_FRAME_RATE: string;
+    static readonly KEY_REAL_FRAME_RATE: string;
+    static readonly KEY_TIME_BASE: string;
+    static readonly KEY_CODEC_TIME_BASE: string;
+    static readonly KEY_TAGS: string;
+
+    constructor(properties: Record<string, any>);
+
+    getIndex(): number;
+
+    getType(): string;
+
+    getCodec(): string;
+
+    getFullCodec(): string;
+
+    getFormat(): string;
+
+    getWidth(): number;
+
+    getHeight(): number;
+
+    getBitrate(): string;
+
+    getSampleRate(): string;
+
+    getSampleFormat(): string;
+
+    getChannelLayout(): string;
+
+    getSampleAspectRatio(): string;
+
+    getDisplayAspectRatio(): string;
+
+    getAverageFrameRate(): string;
+
+    getRealFrameRate(): string;
+
+    getTimeBase(): string;
+
+    getCodecTimeBase(): string;
+
+    getTags(): Record<string, any>;
+
+    getStringProperty(key): string;
+
+    getNumberProperty(key): number;
+
+    getProperties(key): Record<string, any>;
+
+    getAllProperties(): Record<string, any>;
 
   }
 

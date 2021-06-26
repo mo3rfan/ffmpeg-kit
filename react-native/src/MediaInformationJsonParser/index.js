@@ -1,11 +1,16 @@
-class MediaInformationJsonParser {
+import {NativeModules} from 'react-native';
+import {MediaInformation} from "../MediaInformation";
 
-  from(ffprobeJsonOutput) {
-    //@TODO Implement this
+const {FFmpegKitReactNativeModule} = NativeModules;
+
+export class MediaInformationJsonParser {
+
+  static async from(ffprobeJsonOutput) {
+    return FFmpegKitReactNativeModule.mediaInformationJsonParserFrom(ffprobeJsonOutput).map(properties => new MediaInformation(properties));
   }
 
-  fromWithError(ffprobeJsonOutput) {
-    //@TODO Implement this
+  static async fromWithError(ffprobeJsonOutput) {
+    return FFmpegKitReactNativeModule.mediaInformationJsonParserFrom(ffprobeJsonOutput).map(properties => new MediaInformation(properties));
   }
 
 }

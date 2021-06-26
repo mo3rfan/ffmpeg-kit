@@ -1,9 +1,24 @@
 import {AbstractSession} from "../AbstractSession";
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
 
-class FFprobeSession extends AbstractSession {
+export class FFprobeSession extends AbstractSession {
 
-  constructor(sessionId, createTime, startTime, command, argumentsArray, logRedirectionStrategy) {
-    super(sessionId, createTime, startTime, command, argumentsArray, logRedirectionStrategy);
+  constructor() {
+    super();
+  }
+
+  static async create(argumentsArray, executeCallback, logCallback, logRedirectionStrategy) {
+    const session = await AbstractSession.createFFprobeSession(argumentsArray, logRedirectionStrategy);
+    const sessionId = session.getSessionId();
+
+    FFmpegKitFactory.setExecuteCallback(sessionId, executeCallback);
+    FFmpegKitFactory.setLogCallback(sessionId, logCallback);
+
+    return session;
+  }
+
+  static fromMap(sessionMap) {
+    return AbstractSession.createFFprobeSessionFromMap(sessionMap);
   }
 
   isFFmpeg() {
@@ -14,8 +29,4 @@ class FFprobeSession extends AbstractSession {
     return true;
   }
 
-}
-
-export {
-  FFprobeSession
 }

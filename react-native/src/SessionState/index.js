@@ -1,10 +1,6 @@
-const SessionState = {
-  CREATED: 1,
-  RUNNING: 2,
-  FAILED: 3,
-  COMPLETED: 4
-}
-
-export {
-  SessionState
+export const SessionState = {
+  CREATED: 0,
+  RUNNING: 1,
+  FAILED: 2,
+  COMPLETED: 3
 }

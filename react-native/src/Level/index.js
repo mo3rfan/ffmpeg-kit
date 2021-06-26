@@ -1,4 +1,4 @@
-class Level {
+export class Level {
 
   /**
    * This log level is used to specify logs printed to stderr by ffmpeg.
@@ -87,8 +87,4 @@ class Level {
     }
   }
 
-}
-
-export {
-  Level
 }

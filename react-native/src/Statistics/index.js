@@ -1,4 +1,4 @@
-class Statistics {
+export class Statistics {
   #sessionId;
   #videoFrameNumber;
   #videoFps;
@@ -83,8 +83,4 @@ class Statistics {
     this.#speed = speed;
   }
 
-}
-
-export {
-  Statistics
 }

@@ -1,62 +1,38 @@
 import {NativeModules} from 'react-native';
+import {FFmpegSession} from "../FFmpegSession";
+import {FFmpegKitConfig} from "../FFmpegKitConfig";
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
 
 const {FFmpegKitReactNativeModule} = NativeModules;
 
-export class FFmpegKitReactNative {
+export class FFmpegKit {
 
-  /**
-   * Asynchronously executes FFmpeg command provided.
-   *
-   * @param command FFmpeg command
-   * @param executeCallback callback to receive execution result
-   * @returns returns a unique id that represents this execution
-   */
-  async executeAsync(command, executeCallback, logCallback, statisticsCallback) {
-    let sessionId = await FFmpegKitReactNativeModule.executeFFmpegAsyncWithArguments(this.parseArguments(command));
-    // executeCallbackMap.set(sessionId, executeCallback);
-    return sessionId;
+  static async executeAsync(command, executeCallback, logCallback, statisticsCallback) {
+    return FFmpegKit.executeWithArgumentsAsync(this.parseArguments(command), executeCallback, logCallback, statisticsCallback);
   }
 
-  /**
-   * Asynchronously executes FFmpeg with arguments provided.
-   *
-   * @param commandArguments FFmpeg command options/arguments as string array
-   * @param executeCallback callback to receive execution result
-   * @returns returns a unique id that represents this execution
-   */
-  async executeAsyncWithArguments(commandArguments, executeCallback, logCallback, statisticsCallback) {
-    let sessionId = await FFmpegKitReactNativeModule.executeFFmpegAsyncWithArguments(commandArguments);
-    // executeCallbackMap.set(executionId, executeCallback);
-    return sessionId;
+  static async executeWithArgumentsAsync(commandArguments, executeCallback, logCallback, statisticsCallback) {
+    let session = await FFmpegSession.create(commandArguments, executeCallback, logCallback, statisticsCallback);
+
+    await FFmpegKitConfig.asyncFFmpegExecute(session);
+
+    return session;
   }
 
-  /**
-   * Cancels an ongoing operation.
-   */
-  cancel(sessionId) {
+  static cancel(sessionId) {
     if (sessionId === undefined) {
-      FFmpegKitReactNativeModule.cancel();
+      return FFmpegKitReactNativeModule.cancel();
     } else {
-      FFmpegKitReactNativeModule.cancelSession(sessionId);
+      return FFmpegKitReactNativeModule.cancelSession(sessionId);
     }
   }
 
-  /**
-   * Lists ongoing executions.
-   *
-   * @return list of ongoing executions
-   */
-  listSessions() {
-    return FFmpegKitReactNativeModule.listSessions();
+  static async listSessions() {
+    const sessionArray = await FFmpegKitReactNativeModule.getFFmpegSessions();
+    return sessionArray.map(FFmpegKitFactory.mapToSession);
   }
 
-  /**
-   * Parses the given command into arguments.
-   *
-   * @param command string command
-   * @return array of arguments
-   */
-  parseArguments(command) {
+  static parseArguments(command) {
     let argumentList = [];
     let currentArgument = "";
 
@@ -107,8 +83,22 @@ export class FFmpegKitReactNative {
     return argumentList;
   }
 
-  argumentsToString(commandArguments) {
-    //@TODO implement this
+  static argumentsToString(commandArguments) {
+    if (arguments === undefined) {
+      return 'undefined';
+    }
+
+    let command = '';
+
+    function appendArgument(value, index) {
+      if (index > 0) {
+        command += ' ';
+      }
+      command += value;
+    }
+
+    commandArguments.forEach(appendArgument);
+    return command;
   }
 
 }

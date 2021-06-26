@@ -1,10 +1,19 @@
 import {NativeModules} from 'react-native';
 
 import {Session} from "../Session";
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
+import {ReturnCode} from "../ReturnCode";
+import {FFmpegKit} from "../FFmpegKit";
+import {FFmpegKitConfig} from "../FFmpegKitConfig";
+import {LogRedirectionStrategy} from "../LogRedirectionStrategy";
+import {FFmpegSession} from "../FFmpegSession";
+import {FFprobeSession} from "../FFprobeSession";
+import {MediaInformationSession} from "../MediaInformationSession";
+import {MediaInformation} from "../MediaInformation";
 
 const {FFmpegKitReactNativeModule} = NativeModules;
 
-class AbstractSession extends Session {
+export class AbstractSession extends Session {
 
   /**
    * Defines how long default "getAll" methods wait, in milliseconds.
@@ -41,23 +50,115 @@ class AbstractSession extends Session {
    */
   #logRedirectionStrategy;
 
-  constructor(sessionId, createTime, startTime, command, argumentsArray, logRedirectionStrategy) {
+  constructor() {
     super();
+  }
 
-    this.#sessionId = sessionId;
-    this.#createTime = createTime;
-    this.#startTime = startTime;
-    this.#command = command;
-    this.#argumentsArray = argumentsArray;
-    this.#logRedirectionStrategy = logRedirectionStrategy;
+  static async createFFmpegSession(argumentsArray, logRedirectionStrategy) {
+    if (logRedirectionStrategy === undefined) {
+      logRedirectionStrategy = FFmpegKitConfig.getLogRedirectionStrategy();
+    }
+
+    let nativeSession = await FFmpegKitReactNativeModule.ffmpegSession(argumentsArray);
+    let session = new FFmpegSession();
+
+    session.#sessionId = nativeSession.sessionId;
+    session.#createTime = FFmpegKitFactory.validDate(nativeSession.createTime);
+    session.#startTime = FFmpegKitFactory.validDate(nativeSession.startTime);
+    session.#command = nativeSession.command;
+    session.#argumentsArray = argumentsArray;
+    session.#logRedirectionStrategy = logRedirectionStrategy;
+
+    FFmpegKitFactory.setLogRedirectionStrategy(session.#sessionId, logRedirectionStrategy);
+
+    return session;
+  }
+
+  static createFFmpegSessionFromMap(sessionMap) {
+    let session = new FFmpegSession();
+
+    session.#sessionId = sessionMap.sessionId;
+    session.#createTime = FFmpegKitFactory.validDate(sessionMap.createTime);
+    session.#startTime = FFmpegKitFactory.validDate(sessionMap.startTime);
+    session.#command = sessionMap.command;
+    session.#argumentsArray = FFmpegKit.parseArguments(sessionMap.command);
+    session.#logRedirectionStrategy = FFmpegKitFactory.getLogRedirectionStrategy(session.#sessionId);
+
+    return session;
+  }
+
+  static async createFFprobeSession(argumentsArray, logRedirectionStrategy) {
+    if (logRedirectionStrategy === undefined) {
+      logRedirectionStrategy = FFmpegKitConfig.getLogRedirectionStrategy();
+    }
+
+    let nativeSession = await FFmpegKitReactNativeModule.ffprobeSession(argumentsArray);
+    let session = new FFprobeSession();
+
+    session.#sessionId = nativeSession.sessionId;
+    session.#createTime = FFmpegKitFactory.validDate(nativeSession.createTime);
+    session.#startTime = FFmpegKitFactory.validDate(nativeSession.startTime);
+    session.#command = nativeSession.command;
+    session.#argumentsArray = argumentsArray;
+    session.#logRedirectionStrategy = logRedirectionStrategy;
+
+    FFmpegKitFactory.setLogRedirectionStrategy(session.#sessionId, logRedirectionStrategy);
+
+    return session;
+  }
+
+  static createFFprobeSessionFromMap(sessionMap) {
+    let session = new FFprobeSession();
+
+    session.#sessionId = sessionMap.sessionId;
+    session.#createTime = FFmpegKitFactory.validDate(sessionMap.createTime);
+    session.#startTime = FFmpegKitFactory.validDate(sessionMap.startTime);
+    session.#command = sessionMap.command;
+    session.#argumentsArray = FFmpegKit.parseArguments(sessionMap.command);
+    session.#logRedirectionStrategy = FFmpegKitFactory.getLogRedirectionStrategy(session.#sessionId);
+
+    return session;
+  }
+
+  static async createMediaInformationSession(argumentsArray) {
+    let nativeSession = await FFmpegKitReactNativeModule.mediaInformationSession(argumentsArray);
+    let session = new MediaInformationSession();
+
+    session.#sessionId = nativeSession.sessionId;
+    session.#createTime = FFmpegKitFactory.validDate(nativeSession.createTime);
+    session.#startTime = FFmpegKitFactory.validDate(nativeSession.startTime);
+    session.#command = nativeSession.command;
+    session.#argumentsArray = argumentsArray;
+    session.#logRedirectionStrategy = LogRedirectionStrategy.NEVER_PRINT_LOGS;
+
+    FFmpegKitFactory.setLogRedirectionStrategy(session.#sessionId, LogRedirectionStrategy.NEVER_PRINT_LOGS);
+
+    return session;
+  }
+
+  static createMediaInformationSessionFromMap(sessionMap) {
+    let session = new MediaInformationSession();
+
+    session.#sessionId = sessionMap.sessionId;
+    session.#createTime = FFmpegKitFactory.validDate(sessionMap.createTime);
+    session.#startTime = FFmpegKitFactory.validDate(sessionMap.startTime);
+    session.#command = sessionMap.command;
+    session.#argumentsArray = FFmpegKit.parseArguments(sessionMap.command);
+    session.#logRedirectionStrategy = LogRedirectionStrategy.NEVER_PRINT_LOGS;
+
+    if (sessionMap.mediaInformation !== undefined && sessionMap.mediaInformation !== null) {
+      session.setMediaInformation(new MediaInformation(sessionMap.mediaInformation));
+    }
+
+    return session;
   }
 
   getExecuteCallback() {
-    //@TODO implement this later
+    return FFmpegKitFactory.getExecuteCallback(this.getSessionId())
   }
 
   getLogCallback() {
-    //@TODO implement this later
+    return FFmpegKitFactory.getLogCallback(this.getSessionId())
   }
 
   getSessionId() {
@@ -72,12 +173,13 @@ class AbstractSession extends Session {
     return this.#startTime;
   }
 
-  getEndTime() {
-    //@TODO implement this later
+  async getEndTime() {
+    const endTime = FFmpegKitReactNativeModule.abstractSessionGetEndTime(this.getSessionId());
+    return FFmpegKitFactory.validDate(endTime);
   }
 
   getDuration() {
-    //@TODO implement this later
+    return FFmpegKitReactNativeModule.abstractSessionGetDuration(this.getSessionId());
   }
 
   getArguments() {
@@ -88,16 +190,18 @@ class AbstractSession extends Session {
     return this.#command;
   }
 
-  getAllLogs(waitTimeout) {
-    //@TODO implement this later
+  async getAllLogs(waitTimeout) {
+    const allLogs = await FFmpegKitReactNativeModule.abstractSessionGetAllLogs(this.getSessionId(), FFmpegKitFactory.optionalNumericParameter(waitTimeout));
+    return allLogs.map(FFmpegKitFactory.mapToLog);
   }
 
-  getLogs() {
-    //@TODO implement this later
+  async getLogs() {
+    const logs = await FFmpegKitReactNativeModule.abstractSessionGetLogs(this.getSessionId());
+    return logs.map(FFmpegKitFactory.mapToLog);
   }
 
-  getAllLogsAsString(waitTimeout) {
-    //@TODO implement this later
+  async getAllLogsAsString(waitTimeout) {
+    return FFmpegKitReactNativeModule.abstractSessionGetAllLogsAsString(this.getSessionId(), FFmpegKitFactory.optionalNumericParameter(waitTimeout));
   }
 
   async getLogsAsString() {
@@ -110,20 +214,25 @@ class AbstractSession extends Session {
     return concatenatedString;
   }
 
-  getOutput() {
+  async getOutput() {
     return this.getAllLogsAsString();
   }
 
-  getState() {
-    //@TODO implement this later
+  async getState() {
+    return FFmpegKitReactNativeModule.abstractSessionGetState(this.getSessionId());
   }
 
-  getReturnCode() {
-    //@TODO implement this later
+  async getReturnCode() {
+    const returnCodeValue = await FFmpegKitReactNativeModule.abstractSessionGetReturnCode(this.getSessionId());
+    if (returnCodeValue === undefined) {
+      return undefined;
+    } else {
+      return new ReturnCode(returnCodeValue);
+    }
   }
 
   getFailStackTrace() {
-    //@TODO implement this later
+    return FFmpegKitReactNativeModule.abstractSessionGetFailStackTrace(this.getSessionId());
   }
 
   getLogRedirectionStrategy() {
@@ -131,7 +240,7 @@ class AbstractSession extends Session {
   }
 
   thereAreAsynchronousMessagesInTransmit() {
-    //@TODO implement this later
+    return FFmpegKitReactNativeModule.abstractSessionThereAreAsynchronousMessagesInTransmit(this.getSessionId());
   }
 
   isFFmpeg() {
@@ -145,8 +254,4 @@ class AbstractSession extends Session {
   cancel() {
   }
 
-}
-
-export {
-  AbstractSession
 }

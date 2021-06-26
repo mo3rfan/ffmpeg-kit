@@ -1,41 +1,46 @@
 import {NativeModules} from 'react-native';
+import {FFmpegKit} from "../FFmpegKit";
+import {FFmpegKitConfig} from "../FFmpegKitConfig";
+import {FFprobeSession} from "../FFprobeSession";
+import {MediaInformationSession} from "../MediaInformationSession";
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
 
 const {FFmpegKitReactNativeModule} = NativeModules;
 
-export class FFprobeKitReactNative {
+export class FFprobeKit {
 
-  async executeAsync(command, executeCallback, logCallback) {
-    let executionId = await FFmpegKitReactNativeModule.executeFFmpegAsyncWithArguments(this.parseArguments(command));
-    executeCallbackMap.set(executionId, executeCallback);
-    return executionId;
+  static async executeAsync(command, executeCallback, logCallback) {
+    return FFprobeKit.executeWithArgumentsAsync(FFmpegKit.parseArguments(command), executeCallback, logCallback);
   }
 
-  async executeAsyncWithArguments(commandArguments, executeCallback, logCallback) {
-    let executionId = await FFmpegKitReactNativeModule.executeFFmpegAsyncWithArguments(commandArguments);
-    executeCallbackMap.set(executionId, executeCallback);
-    return executionId;
+  static async executeWithArgumentsAsync(commandArguments, executeCallback, logCallback) {
+    let session = await FFprobeSession.create(commandArguments, executeCallback, logCallback);
+
+    await FFmpegKitConfig.asyncFFprobeExecute(session);
+
+    return session;
   }
 
-  /**
-   * Returns media information for given file.
-   *
-   * @param path path or uri of media file
-   * @return media information class
-   */
-  getMediaInformationAsync(path, executeCallback, logCallback, waitTimeout) {
-    return FFmpegKitReactNativeModule.getMediaInformation(path).then(properties => new MediaInformation(properties));
+  static async getMediaInformationAsync(path, executeCallback, logCallback, waitTimeout) {
+    const commandArguments = ["-v", "error", "-hide_banner", "-print_format", "json", "-show_format", "-show_streams", "-i", path];
+    return FFprobeKit.getMediaInformationFromCommandArgumentsAsync(commandArguments, executeCallback, logCallback, waitTimeout);
   }
 
-  getMediaInformationFromCommandAsync(command, executeCallback, logCallback, waitTimeout) {
-    //@TODO implement this later
+  static async getMediaInformationFromCommandAsync(command, executeCallback, logCallback, waitTimeout) {
+    return FFprobeKit.getMediaInformationFromCommandArgumentsAsync(FFmpegKit.parseArguments(command), executeCallback, logCallback, waitTimeout);
   }
 
-  getMediaInformationFromCommandArgumentsAsync(commandArguments, executeCallback, logCallback, waitTimeout) {
-    //@TODO implement this later
+  static async getMediaInformationFromCommandArgumentsAsync(commandArguments, executeCallback, logCallback, waitTimeout) {
+    let session = await MediaInformationSession.create(commandArguments, executeCallback, logCallback);
+
+    await FFmpegKitConfig.asyncGetMediaInformationExecute(session, waitTimeout);
+
+    return session;
   }
 
-  listSessions() {
-    return FFmpegKitReactNativeModule.listSessions();
+  static async listSessions() {
+    const sessionArray = await FFmpegKitReactNativeModule.getFFprobeSessions();
+    return sessionArray.map(FFmpegKitFactory.mapToSession);
   }
 
 }

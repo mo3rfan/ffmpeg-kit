@@ -1,6 +1,6 @@
 import {StreamInformation} from "../StreamInformation";
 
-class MediaInformation {
+export class MediaInformation {
 
   static KEY_MEDIA_PROPERTIES = "format";
   static KEY_FILENAME = "filename";
@@ -178,8 +178,4 @@ class MediaInformation {
   getAllProperties() {
     return this.#allProperties;
   }
-}
-
-export {
-  MediaInformation
 }

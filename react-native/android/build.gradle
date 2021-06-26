@@ -29,7 +29,7 @@ android {
   compileSdkVersion 30
 
   defaultConfig {
-    minSdkVersion safeExtGet('ffmpegKit.package', 'https').contains("-lts") ? 16 : 24
+    minSdkVersion safeExtGet('ffmpegKitPackage', 'https').contains("-lts") ? 16 : 24
     targetSdkVersion 30
     versionCode 440
     versionName "4.4.0"
@@ -122,5 +122,5 @@ repositories {
 
 dependencies {
   api 'com.facebook.react:react-native:+'
-  implementation 'com.arthenica:ffmpeg-kit-' + safePackageName(safeExtGet('ffmpegKit.package', 'https')) + ':' + safePackageVersion(safeExtGet('ffmpegKit.package', 'https'))
+  implementation 'com.arthenica:ffmpeg-kit-' + safePackageName(safeExtGet('ffmpegKitPackage', 'https')) + ':' + safePackageVersion(safeExtGet('ffmpegKitPackage', 'https'))
 }

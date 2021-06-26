@@ -1,11 +1,26 @@
 import {FFprobeSession} from "../FFprobeSession";
-import {LogRedirectionStrategy} from "../LogRedirectionStrategy";
+import {AbstractSession} from "../AbstractSession";
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
 
-class MediaInformationSession extends FFprobeSession {
+export class MediaInformationSession extends FFprobeSession {
   #mediaInformation;
 
-  constructor(sessionId, createTime, startTime, command, argumentsArray) {
-    super(sessionId, createTime, startTime, command, argumentsArray, LogRedirectionStrategy.NEVER_PRINT_LOGS);
+  constructor() {
+    super();
+  }
+
+  static async create(argumentsArray, executeCallback, logCallback) {
+    const session = await AbstractSession.createMediaInformationSession(argumentsArray);
+    const sessionId = session.getSessionId();
+
+    FFmpegKitFactory.setExecuteCallback(sessionId, executeCallback);
+    FFmpegKitFactory.setLogCallback(sessionId, logCallback);
+
+    return session;
+  }
+
+  static fromMap(sessionMap) {
+    return AbstractSession.createMediaInformationSessionFromMap(sessionMap);
   }
 
   getMediaInformation() {
@@ -13,11 +28,7 @@ class MediaInformationSession extends FFprobeSession {
   }
 
   setMediaInformation(mediaInformation) {
-    this.#mediaInformation = mediaInformation;
+    return this.#mediaInformation = mediaInformation;
   }
 
-}
-
-export {
-  MediaInformationSession
 }

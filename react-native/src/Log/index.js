@@ -1,4 +1,4 @@
-class Log {
+export class Log {
   #sessionId;
   #level;
   #message;
@@ -21,8 +21,4 @@ class Log {
     return this.#message;
   }
 
-}
-
-export {
-  Log
 }

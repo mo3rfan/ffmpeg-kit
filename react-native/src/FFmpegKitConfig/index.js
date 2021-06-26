@@ -1,241 +1,205 @@
-import {NativeEventEmitter, NativeModules} from 'react-native';
-import {FFmpegSession} from "../FFmpegSession";
-import {FFprobeSession} from "../FFprobeSession";
-import {FFmpegKitReactNative} from "../FFmpegKit";
+import {NativeModules} from 'react-native';
+import {FFmpegKitFactory} from "../FFmpegKitFactory";
+import {LogRedirectionStrategy} from "../LogRedirectionStrategy";
+import {SessionState} from "../SessionState";
 
 const {FFmpegKitReactNativeModule} = NativeModules;
 
-const eventLog = "RNFFmpegLogCallback";
-const eventStatistics = "RNFFmpegStatisticsCallback";
-const eventExecute = "RNFFmpegExecuteCallback";
-const executeCallbackMap = new Map()
+export class FFmpegKitConfig {
 
-function mapToSession(sessionMap) {
-  if (sessionMap !== undefined) {
-    switch (sessionMap.type) {
-      case 2:
-        return mapToFFprobeSession(sessionMap);
-      case 3:
-        return mapToMediaInformationSession(sessionMap);
-      case 1:
-      default:
-        return mapToFFmpegSession(sessionMap);
-    }
-  } else {
-    return undefined;
-  }
-}
+  static #globalLogRedirectionStrategy = LogRedirectionStrategy.PRINT_LOGS_WHEN_NO_CALLBACKS_DEFINED;
+  static #activeLogLevel = FFmpegKitReactNativeModule.getLogLevel();
 
-function mapToFFmpegSession(sessionMap) {
-  return new FFmpegSession(sessionMap.sessionId,
-    sessionMap.createTime,
-    sessionMap.startTime,
-    sessionMap.command,
-    FFmpegKitReactNative.parseArguments(sessionMap.command),
-    sessionMap.logRedirectionStrategy);
-}
-
-function mapToFFprobeSession(sessionMap) {
-  return new FFprobeSession(sessionMap.sessionId,
-    sessionMap.createTime,
-    sessionMap.startTime,
-    sessionMap.command,
-    FFmpegKitReactNative.parseArguments(sessionMap.command),
-    sessionMap.logRedirectionStrategy);
-}
-
-function mapToMediaInformationSession(sessionMap) {
-  const mediaInformationSession = new MediaInformationSession(sessionMap.sessionId,
-    sessionMap.createTime,
-    sessionMap.startTime,
-    sessionMap.command,
-    FFmpegKitReactNative.parseArguments(sessionMap.command),
-    sessionMap.logRedirectionStrategy);
-
-  mediaInformationSession.setMediaInformation(sessionMap.mediaInformation)
-
-  return mediaInformationSession;
-}
-
-function getVersion() {
-  return "4.4";
-}
-
-export class FFmpegKitReactNativeConfig {
-
-  #logCallback = undefined;
-  #statisticsCallback = undefined;
-  #executeCallback = undefined;
-
-  constructor() {
-    const eventEmitter = new NativeEventEmitter(FFmpegKitReactNativeModule);
-    this.eventListener = eventEmitter.addListener('EventReminder', process);
-
-    function process(event) {
-      console.log(event.eventProperty) // "someValue"
-    }
-
-    async function initialize() {
-      const version = getVersion();
-      const platform = await FFmpegKitReactNativeModule.getPlatform();
-      const arch = await FFmpegKitReactNativeModule.getArch();
-      await FFmpegKitReactNativeModule.enableRedirection();
-
-      return `${platform}-${arch}-${version}`;
-    }
-
-    console.log("Loading ffmpeg-kit-react-native.");
-    initialize().then(fullPlatformName => {
-      console.log(`Loaded ffmpeg-kit-react-native-${fullPlatformName}.`);
-    });
-  }
-
-  async enableRedirection() {
+  static enableRedirection() {
     return FFmpegKitReactNativeModule.enableRedirection();
   }
 
-  async disableRedirection() {
+  static disableRedirection() {
     return FFmpegKitReactNativeModule.disableRedirection();
   }
 
-  setFontconfigConfigurationPath(path) {
+  static setFontconfigConfigurationPath(path) {
     return FFmpegKitReactNativeModule.setFontconfigConfigurationPath(path);
   }
 
-  setFontDirectory(path, mapping) {
+  static setFontDirectory(path, mapping) {
     return FFmpegKitReactNativeModule.setFontDirectory(path, mapping);
   }
 
-  setFontDirectoryList(fontDirectoryList, mapping) {
+  static setFontDirectoryList(fontDirectoryList, mapping) {
     return FFmpegKitReactNativeModule.setFontDirectory(fontDirectoryList, mapping);
   }
 
-  registerNewFFmpegPipe() {
+  static registerNewFFmpegPipe() {
     return FFmpegKitReactNativeModule.registerNewFFmpegPipe();
   }
 
-  closeFFmpegPipe(ffmpegPipePath) {
+  static closeFFmpegPipe(ffmpegPipePath) {
     return FFmpegKitReactNativeModule.closeFFmpegPipe(ffmpegPipePath);
   }
 
-  getFFmpegVersion() {
+  static getFFmpegVersion() {
     return FFmpegKitReactNativeModule.getFFmpegVersion();
   }
 
-  getVersion() {
-    return getVersion();
+  static getVersion() {
+    return FFmpegKitFactory.getVersion();
   }
 
-  isLTSBuild() {
+  static isLTSBuild() {
     return FFmpegKitReactNativeModule.isLTSBuild();
   }
 
-  getBuildDate() {
+  static getBuildDate() {
     return FFmpegKitReactNativeModule.getBuildDate();
   }
 
-  setEnvironmentVariable(name, value) {
+  static setEnvironmentVariable(name, value) {
     return FFmpegKitReactNativeModule.setEnvironmentVariable(name, value);
   }
 
-  ignoreSignal(signal) {
+  static ignoreSignal(signal) {
     return FFmpegKitReactNativeModule.ignoreSignal(signal);
   }
 
-  enableLogCallback(logCallback) {
-    this.#logCallback = logCallback;
+  static asyncFFmpegExecute(ffmpegSession) {
+    return FFmpegKitReactNativeModule.asyncFFmpegSessionExecute(ffmpegSession.getSessionId());
   }
 
-  enableStatisticsCallback(statisticsCallback) {
-    this.#statisticsCallback = statisticsCallback;
+  static asyncFFprobeExecute(ffprobeSession) {
+    return FFmpegKitReactNativeModule.asyncFFprobeSessionExecute(ffprobeSession.getSessionId());
   }
 
-  enableExecuteCallback(executeCallback) {
-    this.#executeCallback = executeCallback;
+  static asyncGetMediaInformationExecute(mediaInformationSession, waitTimeout) {
+    return FFmpegKitReactNativeModule.asyncMediaInformationSessionExecute(mediaInformationSession.getSessionId(), FFmpegKitFactory.optionalNumericParameter(waitTimeout));
   }
 
-  getLogLevel() {
-    return FFmpegKitReactNativeModule.getLogLevel();
+  static enableLogCallback(logCallback) {
+    FFmpegKitFactory.setGlobalLogCallback(logCallback);
   }
 
-  setLogLevel(logLevel) {
+  static enableStatisticsCallback(statisticsCallback) {
+    FFmpegKitFactory.setGlobalStatisticsCallback(statisticsCallback);
+  }
+
+  static enableExecuteCallback(executeCallback) {
+    FFmpegKitFactory.setGlobalExecuteCallback(executeCallback);
+  }
+
+  static getLogLevel() {
+    return this.#activeLogLevel;
+  }
+
+  static setLogLevel(logLevel) {
+    this.#activeLogLevel = logLevel;
     return FFmpegKitReactNativeModule.setLogLevel(logLevel);
   }
 
-  getSessionHistorySize() {
+  static getSessionHistorySize() {
     return FFmpegKitReactNativeModule.getSessionHistorySize();
   }
 
-  setSessionHistorySize(sessionHistorySize) {
+  static setSessionHistorySize(sessionHistorySize) {
     return FFmpegKitReactNativeModule.setSessionHistorySize(sessionHistorySize);
   }
 
-  async getSession(sessionId) {
+  static async getSession(sessionId) {
     if (sessionId === undefined) {
       return undefined;
     } else {
       const sessionMap = await FFmpegKitReactNativeModule.getSession(sessionId);
-      return mapToSession(sessionMap);
+      return FFmpegKitFactory.mapToSession(sessionMap);
     }
   }
 
-  async getLastSession() {
+  static async getLastSession() {
     const sessionMap = await FFmpegKitReactNativeModule.getLastSession();
-    return mapToSession(sessionMap);
+    return FFmpegKitFactory.mapToSession(sessionMap);
   }
 
-  async getLastCompletedSession() {
+  static async getLastCompletedSession() {
     const sessionMap = await FFmpegKitReactNativeModule.getLastCompletedSession();
-    return mapToSession(sessionMap);
+    return FFmpegKitFactory.mapToSession(sessionMap);
   }
 
-  async getSessions() {
+  static async getSessions() {
     const sessionArray = await FFmpegKitReactNativeModule.getSessions();
-    return sessionArray.map(mapToSession);
+    return sessionArray.map(FFmpegKitFactory.mapToSession);
   }
 
-  async getSessionsByState(sessionState) {
+  static async getSessionsByState(sessionState) {
     const sessionArray = await FFmpegKitReactNativeModule.getSessionsByState(sessionState);
-    return sessionArray.map(mapToSession);
+    return sessionArray.map(FFmpegKitFactory.mapToSession);
   }
 
-  async getLogRedirectionStrategy() {
-    return FFmpegKitReactNativeModule.getLogRedirectionStrategy();
+  static getLogRedirectionStrategy() {
+    return this.#globalLogRedirectionStrategy;
   }
 
-  async setLogRedirectionStrategy(logRedirectionStrategy) {
-    return FFmpegKitReactNativeModule.setLogRedirectionStrategy(logRedirectionStrategy);
+  static setLogRedirectionStrategy(logRedirectionStrategy) {
+    return this.#globalLogRedirectionStrategy = logRedirectionStrategy;
   }
 
-  async messagesInTransmit(sessionId) {
+  static async messagesInTransmit(sessionId) {
     const sessionMap = await FFmpegKitReactNativeModule.messagesInTransmit(sessionId);
-    return mapToSession(sessionMap);
+    return FFmpegKitFactory.mapToSession(sessionMap);
+  }
+
+  static sessionStateToString(state) {
+    switch (state) {
+      case SessionState.CREATED:
+        return "CREATED";
+      case SessionState.RUNNING:
+        return "RUNNING";
+      case SessionState.FAILED:
+        return "FAILED";
+      case SessionState.COMPLETED:
+        return "COMPLETED";
+      default:
+        return "";
+    }
   }
 
   // THE FOLLOWING TWO METHODS ARE REACT-NATIVE SPECIFIC
 
-  async enableLogs() {
+  static async enableLogs() {
     return FFmpegKitReactNativeModule.enableLogs();
   }
 
-  async disableLogs() {
+  static async disableLogs() {
     return FFmpegKitReactNativeModule.disableLogs();
   }
 
-  async enableStatistics() {
+  static async enableStatistics() {
     return FFmpegKitReactNativeModule.enableStatistics();
   }
 
-  async disableStatistics() {
+  static async disableStatistics() {
     return FFmpegKitReactNativeModule.disableStatistics();
   }
 
-  async getPlatform() {
+  static async getPlatform() {
     return FFmpegKitReactNativeModule.getPlatform();
   }
 
-  async writeToPipe(inputPath, pipePath) {
+  static async writeToPipe(inputPath, pipePath) {
     return FFmpegKitReactNativeModule.writeToPipe(inputPath, pipePath);
+  }
+
+  static async selectDocumentForRead(type, extraTypes) {
+    return FFmpegKitReactNativeModule.selectDocument(false, undefined, type, extraTypes);
+  }
+
+  static async selectDocumentForWrite(title, type, extraTypes) {
+    return FFmpegKitReactNativeModule.selectDocument(true, title, type, extraTypes);
+  }
+
+  static async getSafParameterForRead(uriString) {
+    return FFmpegKitReactNativeModule.getSafParameter(false, uriString);
+  }
+
+  static async getSafParameterForWrite(uriString) {
+    return FFmpegKitReactNativeModule.getSafParameter(true, uriString);
   }
 
 }
