@@ -52,8 +52,10 @@
 
 #include "libavformat/avformat.h"
 #include "libavformat/avio.h"
+#include "libavformat/internal.h"
 
 #include "libavcodec/avcodec.h"
+#include "libavcodec/bsf.h"
 
 #include "libavfilter/avfilter.h"
 
